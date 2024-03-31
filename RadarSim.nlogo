@@ -1,3 +1,10 @@
+; ==================== ;
+;       RADARSIM       ;
+; ==================== ;
+; AUTHOR: Charlie Wang
+; https://github.com/simulation-world
+; -------------------- ;
+
 globals [time-elapsed]
 
 breed [antennas antenna]
