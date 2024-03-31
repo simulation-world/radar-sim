@@ -1,4 +1,4 @@
-globals []
+globals [time-elapsed]
 
 breed [antennas antenna]
 breed [targets target]
@@ -16,7 +16,7 @@ to setup-radar
 end
 
 to setup-targets
-  create-targets 3
+  create-targets num-targets
   [
    set shape "circle"
    set color blue
@@ -47,14 +47,16 @@ end
 to radar-cycle
   if ticks = next-pulse [transmit]
 
-  if ([energy] of patch-here > detection-threshold) [
-    show (word "Pulse received, time elapsed: " (ticks - last-pulse))
+  if ([energy] of patch-here > detection-threshold)
+  [
+    show (word "Pulse received at " ticks ", time elapsed: " (ticks - last-pulse))
+    set time-elapsed (ticks - last-pulse)
   ]
 end
 
 to transmit
   set mode "T"
-  show "Transmitting"
+  show (word "Transmitting at " ticks)
   ask patch-here [
     set energy 1
     set pcolor energy * 9.9
@@ -101,7 +103,7 @@ to propagate
     ;this should be very high rate (i.e. very rapid, but a low numerical value)
     ; as electromagnetic waves move ~speed of light
     ;VERY important that this is done AFTER propagating the signal to the neighboring patches
-    set energy (energy * signal-decay-rate)
+    set energy (energy * signal-decay-factor)
     set pcolor energy * 9.9
   ]
 end
@@ -172,8 +174,8 @@ SLIDER
 54
 193
 87
-signal-decay-rate
-signal-decay-rate
+signal-decay-factor
+signal-decay-factor
 0
 0.1
 0.002
@@ -247,42 +249,70 @@ detection-threshold
 NIL
 HORIZONTAL
 
+INPUTBOX
+21
+207
+92
+267
+num-targets
+3.0
+1
+0
+Number
+
+MONITOR
+795
+10
+889
+55
+T/R Time Elapsed
+time-elapsed
+2
+1
+11
+
+TEXTBOX
+896
+11
+1036
+53
+This is the duration of how long it took a reflected pulse to return to the antenna
+11
+0.0
+1
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+RadarSim is a simple model which provides an abstract representation of radar. The goal of this model is to explore how explicitly modeled pulses of energy propagate through the environment and interact with surrounding objects. A single antenna is created at the center of the map, with a user-defined number of target objects placed in random locations. The antenna will emit pulses at a set pulse interval, and “listen” for returns until the next pulse. The antenna is intended to represent an isotropic antenna, emitting uniformly in all directions. The target objects are assumed to be spheres which reflect energy back to the direction which it originated from.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+The RadarSim model is centered around radar energy and how it propagates through space. This effect is achieved by having each patch carry an energy value, which changes when an antenna emits a pulse, or when a target object reflects energy. When either of those two events occur, the antenna or target assigns itself as a 'source', which then influences the direction in which the energy will propagate from. As energy propagates from a single source patch, it interacts with its neighboring patches to then "pass on" some residual amount of energy to them. Patches can only perform this handoff with patches who are further away from the energy source, therefore creating the effect of energy being transmitted outward from its origin. 
+
+It is important to note that during the transfer of energy between patches, a very small value must be chosen for the signal decay factor. Although the simulation is an abstraction and does not represent the speed of electromagnetic waves, the energy should pass through each patch as quickly as possible to achieve a reasonably similar effect. If the signal decay factor is too large, the energy will linger within each patch and produce undesirable effects.
+
+When the antenna receives a reflected pulse, it will measure the time elapsed since the last emission to determine the duration of how long the wave travelled.
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+The RadarSim interface is fairly simple and provides few controls to the user. Those inputs include:
 
-## THINGS TO NOTICE
+- Signal-decay-factor: How quickly the energy will decay in each patch
+- Propagation-strength: Roughly translates to the transmitted power of the signal
+- Pulse-interval: How frequently the antenna will emit a new pulse (ticks)
+- Detection-threshold: How high the returned energy value must be for the antenna to consider it a detection
+- Num-targets: The number of target objects created on setup
 
-(suggested things for the user to notice while running the model)
+## FUTURE WORK
 
-## THINGS TO TRY
+The current implementation of this model leaves significant room for 
+improvement. Improvements include:
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
-
-## CREDITS AND REFERENCES
-
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+- Improved propagation system. The current method of patch/neighbor interaction and relationship with the assigned energy source produces undesirable effects in certain situations.
+- Greater directional control / shaping of energy and aspects such as antenna gain.
+- Radar ranging based on the recorded time elapsed between transmit/receive of pulses.
+- Moving targets, and target speed & direction analysis based on target motion over time.
 @#$#@#$#@
 default
 true
